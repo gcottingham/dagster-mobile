@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import { Card, Title, Paragraph, TextInput, Button, Switch, Text, Divider } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, Alert, Switch } from 'react-native';
+import { Card, Title, Paragraph, TextInput, Button, Text, Divider, List, Switch as PaperSwitch } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV_CONFIG } from '../../config/env';
 import { useTheme } from '../ThemeProvider';
@@ -222,7 +223,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {isFirstRun && (
         <Card style={styles.card}>
           <Card.Content>
@@ -295,17 +296,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           <Title>App Preferences</Title>
           <View style={styles.settingItem}>
             <Text style={[styles.settingText, { color: theme.colors.onSurface }]}>Auto-refresh data</Text>
-            <Switch value={autoRefresh} onValueChange={setAutoRefresh} />
+            <Switch 
+              value={autoRefresh} 
+              onValueChange={setAutoRefresh}
+              trackColor={{ false: '#767577', true: '#4F43DD' }}
+              thumbColor={autoRefresh ? '#ffffff' : '#f4f3f4'}
+            />
           </View>
           <Divider style={styles.divider} />
           <View style={styles.settingItem}>
             <Text style={[styles.settingText, { color: theme.colors.onSurface }]}>Enable notifications</Text>
-            <Switch value={notifications} onValueChange={setNotifications} />
+            <Switch 
+              value={notifications} 
+              onValueChange={setNotifications}
+              trackColor={{ false: '#767577', true: '#4F43DD' }}
+              thumbColor={notifications ? '#ffffff' : '#f4f3f4'}
+            />
           </View>
           <Divider style={styles.divider} />
           <View style={styles.settingItem}>
             <Text style={[styles.settingText, { color: theme.colors.onSurface }]}>Dark mode</Text>
-            <Switch value={isDarkMode} onValueChange={toggleDarkMode} />
+            <Switch 
+              value={isDarkMode} 
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: '#767577', true: '#4F43DD' }}
+              thumbColor={isDarkMode ? '#ffffff' : '#f4f3f4'}
+            />
           </View>
         </Card.Content>
       </Card>
@@ -328,7 +344,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           Reset to Default
         </Button>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 };
 

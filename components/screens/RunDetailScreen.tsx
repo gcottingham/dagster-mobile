@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
 import { Card, Title, Paragraph, ActivityIndicator, Text, Divider, Button } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@apollo/client';
 import { GET_RUN, GET_RUN_LOGS } from '../../lib/graphql/queries';
 import LogsViewer from '../LogsViewer';
@@ -112,10 +113,10 @@ const RunDetailScreen: React.FC<RunDetailScreenProps> = ({ navigation, route }) 
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Loading run details...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -124,113 +125,111 @@ const RunDetailScreen: React.FC<RunDetailScreenProps> = ({ navigation, route }) 
   if (error) {
     console.log('RunDetailScreen - GraphQL error:', error);
     return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Error loading run: {error.message}</Text>
-      </View>
+      </SafeAreaView>
     );
   }
   
   if (!run) {
     console.log('RunDetailScreen - No run data found');
     return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Run not found</Text>
         <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
           Run ID: {runId}
         </Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Card style={styles.card}>
-        <Card.Content>
-          <View style={styles.runHeader}>
-            <Title>{run.pipelineName}</Title>
-          </View>
-          <Text style={styles.runId}>Run ID: {run.runId}</Text>
-          {run.startTime && (
-            <Text style={styles.runTime}>
-              Started: {formatDate(run.startTime)} at {formatTime(run.startTime)}
-            </Text>
-          )}
-          {run.endTime && (
-            <Text style={styles.runTime}>
-              Ended: {formatDate(run.endTime)} at {formatTime(run.endTime)}
-            </Text>
-          )}
-        </Card.Content>
-      </Card>
-
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title>Pipeline</Title>
-          <TouchableOpacity onPress={handlePipelinePress} activeOpacity={0.7}>
-            <Text style={[styles.infoItem, styles.clickableText, { color: theme.colors.primary }]}>{run.pipelineName}</Text>
-          </TouchableOpacity>
-        </Card.Content>
-      </Card>
-
-      {run.tags.length > 0 && (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Tags</Title>
-            {run.tags.map((tag: any, index: number) => (
-              <View key={index} style={styles.tagItem}>
-                <Text style={styles.tagKey}>{tag.key}:</Text>
-                <Text style={styles.tagValue} numberOfLines={0}>{tag.value}</Text>
-              </View>
-            ))}
+            <View style={styles.runHeader}>
+              <Title>{run.pipelineName}</Title>
+            </View>
+            <Text style={styles.runId}>Run ID: {run.runId}</Text>
+            {run.startTime && (
+              <Text style={styles.runTime}>
+                Started: {formatDate(run.startTime)} at {formatTime(run.startTime)}
+              </Text>
+            )}
+            {run.endTime && (
+              <Text style={styles.runTime}>
+                Ended: {formatDate(run.endTime)} at {formatTime(run.endTime)}
+              </Text>
+            )}
           </Card.Content>
         </Card>
-      )}
 
+        <Card style={styles.card}>
+          <Card.Content>
+            <Title>Pipeline</Title>
+            <TouchableOpacity onPress={handlePipelinePress} activeOpacity={0.7}>
+              <Text style={[styles.infoItem, styles.clickableText, { color: theme.colors.primary }]}>{run.pipelineName}</Text>
+            </TouchableOpacity>
+          </Card.Content>
+        </Card>
 
+        {run.tags.length > 0 && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Title>Tags</Title>
+              {run.tags.map((tag: any, index: number) => (
+                <View key={index} style={styles.tagItem}>
+                  <Text style={styles.tagKey}>{tag.key}:</Text>
+                  <Text style={styles.tagValue} numberOfLines={0}>{tag.value}</Text>
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
 
-
-
-      <Card style={styles.card}>
-        <Card.Content>
-          <View style={styles.logsHeader}>
-            <Title>Logs</Title>
-            <Button
-              mode={showLogs ? "contained" : "outlined"}
-              onPress={() => setShowLogs(!showLogs)}
-              style={styles.logsButton}
-            >
-              {showLogs ? "Hide Logs" : "Show Logs"}
-            </Button>
-          </View>
-          {showLogs && (logsError || !logsData?.logsForRun || logsData?.logsForRun?.__typename !== 'EventConnection') && (
-            <Text style={styles.mockNote}>
-              Showing sample logs (API logs not available)
-            </Text>
-          )}
-          {showLogs && (
-            <View style={styles.logsContainer}>
-              <LogsViewer
-                logs={
-                  logsData?.logsForRun?.__typename === 'EventConnection' && logsData.logsForRun.events?.length > 0 
-                    ? logsData.logsForRun.events 
-                    : logsError || !logsData?.logsForRun || logsData?.logsForRun?.__typename !== 'EventConnection'
-                      ? (run.status === 'FAILURE' ? mockFailedLogs : mockLogs)
-                      : []
-                }
-                loading={logsLoading}
-                onRefresh={onRefresh}
-                refreshing={refreshing}
-              />
+        <Card style={styles.card}>
+          <Card.Content>
+            <View style={styles.logsHeader}>
+              <Title>Logs</Title>
+              <Button
+                mode={showLogs ? "contained" : "outlined"}
+                onPress={() => setShowLogs(!showLogs)}
+                style={styles.logsButton}
+              >
+                {showLogs ? "Hide Logs" : "Show Logs"}
+              </Button>
             </View>
-          )}
-        </Card.Content>
-      </Card>
-    </ScrollView>
+            {showLogs && (logsError || !logsData?.logsForRun || logsData?.logsForRun?.__typename !== 'EventConnection') && (
+              <Text style={styles.mockNote}>
+                Showing sample logs (API logs not available)
+              </Text>
+            )}
+            {showLogs && (
+              <View style={styles.logsContainer}>
+                <LogsViewer
+                  logs={
+                    logsData?.logsForRun?.__typename === 'EventConnection' && logsData.logsForRun.events?.length > 0 
+                      ? logsData.logsForRun.events 
+                      : logsError || !logsData?.logsForRun || logsData?.logsForRun?.__typename !== 'EventConnection'
+                        ? (run.status === 'FAILURE' ? mockFailedLogs : mockLogs)
+                        : []
+                  }
+                  loading={logsLoading}
+                  onRefresh={onRefresh}
+                  refreshing={refreshing}
+                />
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -374,6 +373,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  scrollView: {
+    flex: 1,
   },
 });
 

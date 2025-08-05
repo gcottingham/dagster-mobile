@@ -1,6 +1,8 @@
 import React from 'react';
 import { ApolloProvider } from '@apollo/client';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { apolloClient, updateApolloClientWithSettings } from './lib/apollo-client';
 import AppNavigator from './components/navigation/AppNavigator';
 import { ThemeProvider, useTheme } from './components/ThemeProvider';
@@ -46,11 +48,18 @@ const AppContent = () => {
   }
 
   return (
-    <ApolloProvider client={apolloClient}>
-      <PaperProvider theme={theme}>
-        <AppNavigator isFirstRun={isFirstRun} onFirstRunComplete={handleFirstRunComplete} />
-      </PaperProvider>
-    </ApolloProvider>
+    <SafeAreaProvider>
+      <StatusBar 
+        style={theme.dark ? 'light' : 'dark'} 
+        backgroundColor="transparent"
+        translucent={true}
+      />
+      <ApolloProvider client={apolloClient}>
+        <PaperProvider theme={theme}>
+          <AppNavigator isFirstRun={isFirstRun} onFirstRunComplete={handleFirstRunComplete} />
+        </PaperProvider>
+      </ApolloProvider>
+    </SafeAreaProvider>
   );
 };
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
 import { Card, Title, Paragraph, ActivityIndicator, Text, Button, IconButton } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@apollo/client';
 import { GET_RUNS, GET_JOBS, GET_ASSETS } from '../../lib/graphql/queries';
 import { RepositorySelector, DagsterCloudDeployment } from '../../lib/types/dagster';
@@ -148,14 +149,14 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const assets = assetsData?.assetsOrError?.nodes || [];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-    <ScrollView 
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView 
         style={styles.scrollView}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-            <Card style={styles.card}>
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+            <Card style={[styles.card, { marginTop: 4 }]}>
         <Card.Content>
           <View style={styles.overviewHeader}>
           <Title>Overview</Title>
@@ -300,7 +301,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
             onClose={() => setShowDeploymentSelector(false)}
           />
         )}
-      </View>
+      </SafeAreaView>
   );
 };
 
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -334,7 +335,8 @@ const styles = StyleSheet.create({
   },
   card: {
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginTop: 0,
+    marginBottom: 8,
     elevation: 2,
   },
   statsRow: {
@@ -423,11 +425,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   section: {
-    marginTop: 16,
+    marginTop: 8,
   },
   sectionHeader: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 6,
   },
   sectionTitle: {
     fontSize: 18,

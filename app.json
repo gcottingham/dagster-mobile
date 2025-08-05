@@ -7,7 +7,7 @@
     "icon": "./assets/dagster-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/dagster-icon.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -30,7 +30,7 @@
       "enableSeparateBuildPerCPUArchitecture": true
     },
     "web": {
-      "favicon": "./assets/dagster-icon.png"
+      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {

@@ -1,11 +1,30 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Alert, Switch } from 'react-native';
-import { Card, Title, Paragraph, ActivityIndicator, Text, Searchbar, SegmentedButtons, Button } from 'react-native-paper';
+import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { Card, Title, Paragraph, ActivityIndicator, Text, Searchbar, SegmentedButtons, Button, Switch } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useLazyQuery, useMutation, useApolloClient } from '@apollo/client';
 import { GET_SCHEDULES, GET_SENSORS, GET_REPOSITORIES, START_SENSOR, STOP_SENSOR, START_SCHEDULE, STOP_SCHEDULE } from '../../lib/graphql/queries';
 import { ScheduleResult, SensorResult, RepositorySelector, Repository, SensorSelector, ScheduleSelector } from '../../lib/types/dagster';
 import { useTheme } from '../ThemeProvider';
 import Svg, { Path } from 'react-native-svg';
+
+const SensorIcon = ({ color, size }: { color: string; size: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M6.46699 13.5333C5.55866 12.6333 5.00033 11.3833 5.00033 9.99994C5.00033 8.61661 5.55866 7.36661 6.46699 6.46661L7.65033 7.64994C7.04199 8.24994 6.66699 9.08328 6.66699 9.99994C6.66699 10.9166 7.04199 11.7499 7.64199 12.3583L6.46699 13.5333ZM13.5337 13.5333C14.442 12.6333 15.0003 11.3833 15.0003 9.99994C15.0003 8.61661 14.442 7.36661 13.5337 6.46661L12.3503 7.64994C12.9587 8.24994 13.3337 9.08328 13.3337 9.99994C13.3337 10.9166 12.9587 11.7499 12.3587 12.3583L13.5337 13.5333ZM10.0003 8.33328C9.08366 8.33328 8.33366 9.08328 8.33366 9.99994C8.33366 10.9166 9.08366 11.6666 10.0003 11.6666C10.917 11.6666 11.667 10.9166 11.667 9.99994C11.667 9.08328 10.917 8.33328 10.0003 8.33328ZM16.667 9.99994C16.667 11.8416 15.917 13.5083 14.7087 14.7083L15.892 15.8916C17.4003 14.3833 18.3337 12.2999 18.3337 9.99994C18.3337 7.69994 17.4003 5.61661 15.892 4.10828L14.7087 5.29161C15.3303 5.90786 15.8235 6.64134 16.1596 7.44954C16.4958 8.25775 16.6682 9.12462 16.667 9.99994ZM5.29199 5.29161L4.10866 4.10828C2.60033 5.61661 1.66699 7.69994 1.66699 9.99994C1.66699 12.2999 2.60033 14.3833 4.10866 15.8916L5.29199 14.7083C4.08366 13.5083 3.33366 11.8416 3.33366 9.99994C3.33366 8.15828 4.08366 6.49161 5.29199 5.29161Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+const ScheduleIcon = ({ color, size }: { color: string; size: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M9.99199 1.66663C5.39199 1.66663 1.66699 5.39996 1.66699 9.99996C1.66699 14.6 5.39199 18.3333 9.99199 18.3333C14.6003 18.3333 18.3337 14.6 18.3337 9.99996C18.3337 5.39996 14.6003 1.66663 9.99199 1.66663ZM10.0003 16.6666C6.31699 16.6666 3.33366 13.6833 3.33366 9.99996C3.33366 6.31663 6.31699 3.33329 10.0003 3.33329C13.6837 3.33329 16.667 6.31663 16.667 9.99996C16.667 13.6833 13.6837 16.6666 10.0003 16.6666ZM10.417 5.83329H9.16699V10.8333L13.542 13.4583L14.167 12.4333L10.417 10.2083V5.83329Z"
+      fill={color}
+    />
+  </Svg>
+);
 
 interface AutomationsScreenProps {
   navigation: any;
@@ -335,15 +354,15 @@ const AutomationsScreen: React.FC<AutomationsScreenProps> = ({ navigation, route
   
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Loading automations...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.outline }]}>
         <Searchbar
           placeholder={`Search ${viewMode}...`}
@@ -379,24 +398,26 @@ const AutomationsScreen: React.FC<AutomationsScreenProps> = ({ navigation, route
                 <Card style={styles.card}>
                   <Card.Content>
                     <View style={styles.itemHeader}>
-                      <Title style={styles.itemName}>{automation.name}</Title>
+                      <View style={styles.itemNameContainer}>
+                        {viewMode === 'sensors' ? (
+                          <SensorIcon color={theme.colors.onSurface} size={20} />
+                        ) : (
+                          <ScheduleIcon color={theme.colors.onSurface} size={20} />
+                        )}
+                        <Title style={styles.itemName}>{automation.name}</Title>
+                      </View>
+                      <Switch
+                        value={automation.status === 'RUNNING'}
+                        onValueChange={(newValue) => handleToggleAutomation(automation, newValue)}
+                        trackColor={{ false: '#767577', true: '#4F43DD' }}
+                        thumbColor={automation.status === 'RUNNING' ? '#ffffff' : '#f4f3f4'}
+                      />
                     </View>
                     {automation.description && (
                       <Paragraph style={[styles.itemDescription, { color: theme.colors.onSurfaceVariant }]}>
                         {automation.description}
                       </Paragraph>
                     )}
-                    <View style={styles.toggleContainer}>
-                      <Text style={[styles.toggleLabel, { color: theme.colors.onSurfaceVariant }]}>
-                        {automation.status === 'RUNNING' ? 'Running' : 'Stopped'}
-                      </Text>
-                      <Switch
-                        value={automation.status === 'RUNNING'}
-                        onValueChange={(newValue) => handleToggleAutomation(automation, newValue)}
-                        trackColor={{ false: '#767577', true: '#4caf50' }}
-                        thumbColor={automation.status === 'RUNNING' ? '#ffffff' : '#f4f3f4'}
-                      />
-                    </View>
                   </Card.Content>
                 </Card>
               </TouchableOpacity>
@@ -425,7 +446,7 @@ const AutomationsScreen: React.FC<AutomationsScreenProps> = ({ navigation, route
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -434,7 +455,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 16,
+    padding: 8,
     elevation: 2,
   },
   searchBar: {
@@ -461,9 +482,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  itemName: {
-    fontSize: 18,
+  itemNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  itemName: {
+    fontSize: 16,
+    marginLeft: 8,
   },
   itemDescription: {
     fontSize: 14,
@@ -517,15 +543,7 @@ const styles = StyleSheet.create({
   buttonLabel: {
     fontSize: 12,
   },
-  toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  toggleLabel: {
-    fontSize: 14,
-  },
+
   cardTouchable: {
     marginBottom: 16,
   },

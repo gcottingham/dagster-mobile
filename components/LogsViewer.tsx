@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
-import { Card, Title, Text, ActivityIndicator, Chip } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, RefreshControl, Modal, TouchableOpacity } from 'react-native';
+import { Card, Title, Text, ActivityIndicator, Chip, Button } from 'react-native-paper';
 import { LogEvent } from '../lib/types/dagster';
 import { formatDagsterDate, formatDagsterTime } from '../lib/utils/dateUtils';
 import { useTheme } from './ThemeProvider';
@@ -21,6 +21,8 @@ const LogsViewer: React.FC<LogsViewerProps> = ({
   const { theme } = useTheme();
   const [selectedLevel, setSelectedLevel] = React.useState<string>('ALL');
   const [selectedType, setSelectedType] = React.useState<string>('ALL');
+  const [levelMenuVisible, setLevelMenuVisible] = React.useState(false);
+  const [typeMenuVisible, setTypeMenuVisible] = React.useState(false);
 
   // Debug logging
   React.useEffect(() => {
@@ -221,36 +223,111 @@ const LogsViewer: React.FC<LogsViewerProps> = ({
           {/* Filter Controls */}
           <View style={styles.filterContainer}>
             <Text style={[styles.filterLabel, { color: theme.colors.onSurface }]}>Level:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-              {allLevels.map(level => (
-                <Chip
-                  key={level}
-                  mode={selectedLevel === level ? "flat" : "outlined"}
-                  onPress={() => setSelectedLevel(level)}
-                  style={styles.filterChip}
-                  textStyle={{ color: selectedLevel === level ? 'white' : getLogLevelColor(level) }}
-                >
-                  {level}
-                </Chip>
-              ))}
-            </ScrollView>
+            <Button
+              mode="outlined"
+              onPress={() => setLevelMenuVisible(true)}
+              style={styles.filterButton}
+              textColor={theme.colors.onSurface}
+              icon="chevron-down"
+            >
+              {selectedLevel}
+            </Button>
           </View>
           
           <View style={styles.filterContainer}>
             <Text style={[styles.filterLabel, { color: theme.colors.onSurface }]}>Type:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-              {allTypes.map(type => (
-                <Chip
-                  key={type}
-                  mode={selectedType === type ? "flat" : "outlined"}
-                  onPress={() => setSelectedType(type)}
-                  style={styles.filterChip}
-                >
-                  {type}
-                </Chip>
-              ))}
-            </ScrollView>
+            <Button
+              mode="outlined"
+              onPress={() => setTypeMenuVisible(true)}
+              style={styles.filterButton}
+              textColor={theme.colors.onSurface}
+              icon="chevron-down"
+            >
+              {selectedType}
+            </Button>
           </View>
+
+          {/* Level Picker Modal */}
+          <Modal
+            visible={levelMenuVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setLevelMenuVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Select Level</Text>
+                  <TouchableOpacity onPress={() => setLevelMenuVisible(false)}>
+                    <Text style={[styles.closeButton, { color: theme.colors.onSurface }]}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView style={styles.modalList}>
+                  {allLevels.map(level => (
+                    <TouchableOpacity
+                      key={level}
+                      style={styles.modalItem}
+                      onPress={() => {
+                        setSelectedLevel(level);
+                        setLevelMenuVisible(false);
+                      }}
+                    >
+                      <Text style={[
+                        styles.modalItemText, 
+                        { 
+                          color: level === selectedLevel ? theme.colors.primary : getLogLevelColor(level),
+                          fontWeight: level === selectedLevel ? 'bold' : 'normal'
+                        }
+                      ]}>
+                        {level}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Type Picker Modal */}
+          <Modal
+            visible={typeMenuVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setTypeMenuVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Select Type</Text>
+                  <TouchableOpacity onPress={() => setTypeMenuVisible(false)}>
+                    <Text style={[styles.closeButton, { color: theme.colors.onSurface }]}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView style={styles.modalList}>
+                  {allTypes.map(type => (
+                    <TouchableOpacity
+                      key={type}
+                      style={styles.modalItem}
+                      onPress={() => {
+                        setSelectedType(type);
+                        setTypeMenuVisible(false);
+                      }}
+                    >
+                      <Text style={[
+                        styles.modalItemText, 
+                        { 
+                          color: type === selectedType ? theme.colors.primary : theme.colors.onSurface,
+                          fontWeight: type === selectedType ? 'bold' : 'normal'
+                        }
+                      ]}>
+                        {type}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
         </Card.Content>
       </Card>
 
@@ -375,14 +452,50 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 8,
     color: '#333',
   },
-  filterScroll: {
-    flexGrow: 0,
+  filterButton: {
+    marginBottom: 8,
   },
-  filterChip: {
-    marginRight: 8,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    maxHeight: '70%',
+    borderRadius: 12,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalList: {
+    maxHeight: 300,
+  },
+  modalItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalItemText: {
+    fontSize: 16,
   },
 });
 

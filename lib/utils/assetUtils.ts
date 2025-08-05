@@ -128,8 +128,8 @@ export const useAssetPartitionInfo = (assetKey: AssetKeyInput) => {
     
     const asset = data.assetOrError;
     
-    // Check if the asset has a partitions definition
-    if (asset?.definition?.partitionsDefinition) {
+    // Check if the asset has a partition definition
+    if (asset?.definition?.partitionDefinition) {
       return true;
     }
 

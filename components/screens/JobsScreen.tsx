@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
 import { Card, Title, Paragraph, ActivityIndicator, Text, Searchbar, SegmentedButtons, IconButton } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useLazyQuery, useApolloClient } from '@apollo/client';
 import { GET_JOBS, GET_REPOSITORIES } from '../../lib/graphql/queries';
 import { RepositorySelector, Job, Repository } from '../../lib/types/dagster';
@@ -355,15 +356,15 @@ const JobsScreen: React.FC<JobsScreenProps> = ({ navigation, route }) => {
   
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Loading jobs...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <Searchbar
           placeholder="Search jobs..."
@@ -451,7 +452,7 @@ const JobsScreen: React.FC<JobsScreenProps> = ({ navigation, route }) => {
           onTimeRangeChange={setTimeRange}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -465,7 +466,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    padding: 16,
+    padding: 8,
   },
   searchBar: {
     marginBottom: 12,

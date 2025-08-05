@@ -1391,7 +1391,7 @@ export const GET_ASSET_PARTITION_INFO = gql`
           path
         }
         definition {
-          partitionsDefinition {
+          partitionDefinition {
             name
             type
           }

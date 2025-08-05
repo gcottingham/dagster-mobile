@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, Alert } from 'react-native';
 import { Card, Title, Paragraph, ActivityIndicator, Text, Divider, Chip, Button } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@apollo/client';
 import { GET_ASSET, GET_ASSET_DETAILS, GET_ASSET_VIEW_DEFINITION } from '../../lib/graphql/queries';
 import { AssetKeyInput } from '../../lib/types/dagster';
@@ -463,6 +464,7 @@ const AssetDetailScreen: React.FC<AssetDetailScreenProps> = ({ navigation, route
     switch (status) {
       case 'HEALTHY': return '#4caf50';
       case 'WARNING': return '#ff9800';
+      case 'DEGRADED': return '#f44336';
       case 'UNHEALTHY': return '#f44336';
       default: return '#9e9e9e';
     }
@@ -484,10 +486,10 @@ const AssetDetailScreen: React.FC<AssetDetailScreenProps> = ({ navigation, route
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Loading asset details...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -495,7 +497,7 @@ const AssetDetailScreen: React.FC<AssetDetailScreenProps> = ({ navigation, route
   
   if (!asset) {
     return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
         <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: theme.colors.onSurface }}>
           Asset not found
         </Text>
@@ -505,213 +507,208 @@ const AssetDetailScreen: React.FC<AssetDetailScreenProps> = ({ navigation, route
         <Text style={{ marginTop: 8, textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
           Try configuring your Dagster+ API in Settings
         </Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* Asset Overview */}
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={{ color: theme.colors.onSurface }}>{(asset.key?.path || []).join(' / ')}</Title>
-          <Text style={[styles.assetPath, { color: theme.colors.onSurfaceVariant }]}>
-            Op: {asset.definition?.opName || 'Unknown Asset'}
-          </Text>
-          {asset.definition?.description && (
-            <Paragraph style={[styles.description, { color: theme.colors.onSurface }]}>
-              {asset.definition.description}
-            </Paragraph>
-          )}
-          
-          {/* Materialize Button */}
-          {!isPartitioned && !partitionLoading && (
-            <View style={styles.materializeButtonContainer}>
-              <Button
-                mode="contained"
-                onPress={handleLaunchMaterialization}
-                loading={launchLoading}
-                disabled={launchLoading}
-                icon="play"
-                style={styles.materializeButton}
-              >
-                Materialize
-              </Button>
-            </View>
-          )}
-        </Card.Content>
-      </Card>
-
-      {/* Asset Health */}
-      {asset.assetHealth && (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Asset Overview */}
         <Card style={styles.card}>
           <Card.Content>
-            <Title style={{ color: theme.colors.onSurface }}>Asset Health</Title>
-            <View style={styles.healthRow}>
-              <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Overall</Text>
-                <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.assetHealth) }]}>
-                  <Text style={styles.healthText}>{asset.assetHealth.assetHealth}</Text>
-                </View>
-              </View>
-              <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Materialization</Text>
-                <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.materializationStatus) }]}>
-                  <Text style={styles.healthText}>{asset.assetHealth.materializationStatus}</Text>
-                </View>
-              </View>
-              <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Checks</Text>
-                <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.assetChecksStatus) }]}>
-                  <Text style={styles.healthText}>{formatHealthStatus(asset.assetHealth.assetChecksStatus)}</Text>
-                </View>
-              </View>
-              <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Freshness</Text>
-                <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.freshnessStatus) }]}>
-                  <Text style={styles.healthText}>{formatHealthStatus(asset.assetHealth.freshnessStatus)}</Text>
-                </View>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-
-      {/* Asset Details */}
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={{ color: theme.colors.onSurface }}>Asset Details</Title>
-          
-          {asset.definition?.groupName && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Group</Text>
-              <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>{asset.definition.groupName}</Text>
-            </View>
-          )}
-
-
-
-          {asset.definition?.freshnessPolicy && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Freshness Policy</Text>
-              <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>
-                {asset.definition.freshnessPolicy.cronSchedule || `${asset.definition.freshnessPolicy.maximumLagMinutes} minutes`}
-              </Text>
-            </View>
-          )}
-
-          {asset.definition?.autoMaterializePolicy && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Auto Materialize</Text>
-              <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>{asset.definition.autoMaterializePolicy.policyType}</Text>
-            </View>
-          )}
-
-          {asset.definition?.backfillPolicy && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Backfill Policy</Text>
-              <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>
-                Max {asset.definition.backfillPolicy.maxPartitionsPerRun} partitions per run
-              </Text>
-            </View>
-          )}
-        </Card.Content>
-      </Card>
-
-      {/* Kinds */}
-      {asset.definition?.tags && asset.definition.tags.filter((tag: any) => tag.key.startsWith('dagster/kind/')).length > 0 && (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={{ color: theme.colors.onSurface }}>Kinds</Title>
-            <View style={styles.tagsContainer}>
-              {asset.definition.tags
-                .filter((tag: any) => tag.key.startsWith('dagster/kind/'))
-                .map(renderTag)}
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-
-      {/* Tags */}
-      {asset.definition?.tags && asset.definition.tags.filter((tag: any) => !tag.key.startsWith('dagster/kind/')).length > 0 && (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={{ color: theme.colors.onSurface }}>Tags</Title>
-            <View style={styles.tagsContainer}>
-              {asset.definition.tags
-                .filter((tag: any) => !tag.key.startsWith('dagster/kind/'))
-                .map(renderTag)}
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-
-      {/* Asset Definition Metadata */}
-      {asset.definition?.metadata && asset.definition.metadata.length > 0 && (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={{ color: theme.colors.onSurface }}>Asset Metadata</Title>
-            {asset.definition.metadata.map(renderMetadataEntry)}
-          </Card.Content>
-        </Card>
-      )}
-
-
-
-      {/* Latest Materialization Metadata */}
-      {asset.assetMaterializations && asset.assetMaterializations.length > 0 && 
-       asset.assetMaterializations[0].metadataEntries && asset.assetMaterializations[0].metadataEntries.length > 0 && (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={{ color: theme.colors.onSurface }}>Latest Materialization Metadata</Title>
-            <Text style={[styles.materializationTime, { color: theme.colors.onSurface }]}>
-              {formatDate(asset.assetMaterializations[0].timestamp)} at {formatTime(asset.assetMaterializations[0].timestamp)}
+            <Title style={{ color: theme.colors.onSurface }}>{(asset.key?.path || []).join(' / ')}</Title>
+            <Text style={[styles.assetPath, { color: theme.colors.onSurfaceVariant }]}>
+              Op: {asset.definition?.opName || 'Unknown Asset'}
             </Text>
-            {asset.assetMaterializations[0].metadataEntries.map((entry: any, index: number) => (
-              <View key={`materialization-${index}`}>
-                {renderMetadataEntry(entry)}
+            {asset.definition?.description && (
+              <Paragraph style={[styles.description, { color: theme.colors.onSurface }]}>
+                {asset.definition.description}
+              </Paragraph>
+            )}
+            
+            {/* Materialize Button */}
+            {!isPartitioned && !partitionLoading && (
+              <View style={styles.materializeButtonContainer}>
+                <Button
+                  mode="contained"
+                  onPress={handleLaunchMaterialization}
+                  loading={launchLoading}
+                  disabled={launchLoading}
+                  icon="play"
+                  style={styles.materializeButton}
+                >
+                  Materialize
+                </Button>
               </View>
-            ))}
+            )}
           </Card.Content>
         </Card>
-      )}
 
-
-
-      {/* Recent Materializations */}
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={{ color: theme.colors.onSurface }}>Recent Materializations</Title>
-          {!asset.assetMaterializations || asset.assetMaterializations.length === 0 ? (
-            <Paragraph style={{ color: theme.colors.onSurfaceVariant }}>No materializations found</Paragraph>
-          ) : (
-            asset.assetMaterializations.slice(0, 5).map((materialization: any, index: number) => (
-              <View key={`materialization-${materialization.timestamp}-${index}`} style={styles.materializationItem}>
-                <Text style={[styles.materializationTime, { color: theme.colors.onSurface }]}>
-                  {formatDate(materialization.timestamp)} at {formatTime(materialization.timestamp)}
-                </Text>
-                {materialization.runId && (
-                  <Text style={[styles.materializationRunId, { color: theme.colors.onSurfaceVariant }]}>
-                    Run: {materialization.runId}
-                  </Text>
-                )}
-                {index < Math.min(asset.assetMaterializations.length, 5) - 1 && <Divider style={styles.divider} />}
+        {/* Asset Health */}
+        {asset.assetHealth && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Title style={{ color: theme.colors.onSurface }}>Asset Health</Title>
+              <View style={styles.healthRow}>
+                <View style={styles.healthItem}>
+                  <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Overall</Text>
+                  <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.assetHealth) }]}>
+                    <Text style={styles.healthText}>{asset.assetHealth.assetHealth}</Text>
+                  </View>
+                </View>
+                <View style={styles.healthItem}>
+                  <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Materialization</Text>
+                  <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.materializationStatus) }]}>
+                    <Text style={styles.healthText}>{asset.assetHealth.materializationStatus}</Text>
+                  </View>
+                </View>
+                <View style={styles.healthItem}>
+                  <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Checks</Text>
+                  <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.assetChecksStatus) }]}>
+                    <Text style={styles.healthText}>{formatHealthStatus(asset.assetHealth.assetChecksStatus)}</Text>
+                  </View>
+                </View>
+                <View style={styles.healthItem}>
+                  <Text style={[styles.healthLabel, { color: theme.colors.onSurfaceVariant }]}>Freshness</Text>
+                  <View style={[styles.healthBadge, { backgroundColor: getHealthColor(asset.assetHealth.freshnessStatus) }]}>
+                    <Text style={styles.healthText}>{formatHealthStatus(asset.assetHealth.freshnessStatus)}</Text>
+                  </View>
+                </View>
               </View>
-            ))
-          )}
-        </Card.Content>
-      </Card>
-    </ScrollView>
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* Asset Details */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Title style={{ color: theme.colors.onSurface }}>Asset Details</Title>
+            
+            {asset.definition?.groupName && (
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Group</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>{asset.definition.groupName}</Text>
+              </View>
+            )}
+
+            {asset.definition?.freshnessPolicy && (
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Freshness Policy</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>
+                  {asset.definition.freshnessPolicy.cronSchedule || `${asset.definition.freshnessPolicy.maximumLagMinutes} minutes`}
+                </Text>
+              </View>
+            )}
+
+            {asset.definition?.autoMaterializePolicy && (
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Auto Materialize</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>
+                  {asset.definition.autoMaterializePolicy ? 'Enabled' : 'Disabled'}
+                </Text>
+              </View>
+            )}
+
+            {asset.definition?.tags && asset.definition.tags.length > 0 && (
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Tags</Text>
+                <View style={styles.tagsContainer}>
+                  {asset.definition.tags.map((tag: any, index: number) => (
+                    <Chip key={index} style={styles.tagChip} textStyle={styles.tagText}>
+                      {tag.key}: {tag.value}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {asset.definition?.metadataEntries && asset.definition.metadataEntries.length > 0 && (
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Metadata</Text>
+                <View style={styles.metadataContainer}>
+                  {asset.definition.metadataEntries.map((entry: any, index: number) => (
+                    <View key={index} style={styles.metadataEntry}>
+                      {renderMetadataEntry(entry)}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+
+        {/* Asset Materializations */}
+        {asset.assetMaterializations && asset.assetMaterializations.length > 0 && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Title style={{ color: theme.colors.onSurface }}>Recent Materializations</Title>
+              {asset.assetMaterializations.slice(0, 5).map((materialization: any, index: number) => (
+                <View key={index} style={styles.materializationItem}>
+                  <View style={styles.materializationHeader}>
+                    <Text style={[styles.materializationTime, { color: theme.colors.onSurface }]}>
+                      {formatDate(materialization.timestamp)} at {formatTime(materialization.timestamp)}
+                    </Text>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(materialization.status) }]}>
+                      <Text style={styles.statusText}>{materialization.status}</Text>
+                    </View>
+                  </View>
+                  {materialization.metadataEntries && materialization.metadataEntries.length > 0 && (
+                    <View style={styles.metadataContainer}>
+                      {materialization.metadataEntries.map((entry: any, entryIndex: number) => (
+                        <View key={entryIndex} style={styles.metadataEntry}>
+                          {renderMetadataEntry(entry)}
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* Asset Observations */}
+        {asset.assetObservations && asset.assetObservations.length > 0 && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Title style={{ color: theme.colors.onSurface }}>Recent Observations</Title>
+              {asset.assetObservations.slice(0, 5).map((observation: any, index: number) => (
+                <View key={index} style={styles.observationItem}>
+                  <View style={styles.observationHeader}>
+                    <Text style={[styles.observationTime, { color: theme.colors.onSurface }]}>
+                      {formatDate(observation.timestamp)} at {formatTime(observation.timestamp)}
+                    </Text>
+                  </View>
+                  {observation.metadataEntries && observation.metadataEntries.length > 0 && (
+                    <View style={styles.metadataContainer}>
+                      {observation.metadataEntries.map((entry: any, entryIndex: number) => (
+                        <View key={entryIndex} style={styles.metadataEntry}>
+                          {renderMetadataEntry(entry)}
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   loadingContainer: {
@@ -998,6 +995,49 @@ const styles = StyleSheet.create({
   },
   materializeButton: {
     width: '100%',
+  },
+  tagChip: {
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  tagText: {
+    fontSize: 12,
+  },
+  metadataContainer: {
+    marginTop: 8,
+  },
+  metadataEntry: {
+    marginVertical: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  observationItem: {
+    marginVertical: 8,
+  },
+  observationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  observationTime: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  materializationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
 
 });

@@ -1,11 +1,22 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ScrollView, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
 import { Card, Title, Paragraph, ActivityIndicator, Text, Searchbar, SegmentedButtons } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@apollo/client';
 import { GET_RUNS } from '../../lib/graphql/queries';
 import { RepositorySelector, Run } from '../../lib/types/dagster';
 import { formatDagsterDate, formatDagsterTime } from '../../lib/utils/dateUtils';
 import { useTheme } from '../ThemeProvider';
+import Svg, { Path } from 'react-native-svg';
+
+const RunIcon = ({ color, size }: { color: string; size: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M10 12.4C10.6667 12.4 11.2333 12.1667 11.7 11.7C12.1667 11.2333 12.4 10.6667 12.4 10C12.4 9.33333 12.1667 8.76667 11.7 8.3C11.2333 7.83333 10.6667 7.6 10 7.6C9.33333 7.6 8.76667 7.83333 8.3 8.3C7.83333 8.76667 7.6 9.33333 7.6 10C7.6 10.6667 7.83333 11.2333 8.3 11.7C8.76667 12.1667 9.33333 12.4 10 12.4ZM10 18C8.89333 18 7.85333 17.79 6.88 17.37C5.90667 16.95 5.06 16.38 4.34 15.66C3.62 14.94 3.05 14.0933 2.63 13.12C2.21 12.1467 2 11.1067 2 10C2 8.89333 2.21 7.85333 2.63 6.88C3.05 5.90667 3.62 5.06 4.34 4.34C5.06 3.62 5.90667 3.05 6.88 2.63C7.85333 2.21 8.89333 2 10 2C11.1067 2 12.1467 2.21 13.12 2.63C14.0933 3.05 14.94 3.62 15.66 4.34C16.38 5.06 16.95 5.90667 17.37 6.88C17.79 7.85333 18 8.89333 18 10C18 11.1067 17.79 12.1467 17.37 13.12C16.95 14.0933 16.38 14.94 15.66 15.66C14.94 16.38 14.0933 16.95 13.12 17.37C12.1467 17.79 11.1067 18 10 18ZM10 16.4C11.7867 16.4 13.3 15.78 14.54 14.54C15.78 13.3 16.4 11.7867 16.4 10C16.4 8.21333 15.78 6.7 14.54 5.46C13.3 4.22 11.7867 3.6 10 3.6C8.21333 3.6 6.7 4.22 5.46 5.46C4.22 6.7 3.6 8.21333 3.6 10C3.6 11.7867 4.22 13.3 5.46 14.54C6.7 15.78 8.21333 16.4 10 16.4Z"
+      fill={color}
+    />
+  </Svg>
+);
 
 interface RunsScreenProps {
   navigation: any;
@@ -149,7 +160,10 @@ const RunsScreen: React.FC<RunsScreenProps> = ({ navigation, route }) => {
       <Card style={styles.card} onPress={() => handleRunPress(item)}>
         <Card.Content>
           <View style={styles.runHeader}>
-            <Title style={styles.runName}>{item.runId.substring(0, 8)}</Title>
+            <View style={styles.runNameContainer}>
+              <RunIcon color={theme.colors.onSurface} size={20} />
+              <Title style={styles.runName}>{item.runId.substring(0, 8)}</Title>
+            </View>
             <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
               <Text style={styles.statusText}>{item.status}</Text>
             </View>
@@ -197,15 +211,15 @@ const RunsScreen: React.FC<RunsScreenProps> = ({ navigation, route }) => {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Loading runs...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
       <Searchbar
         placeholder="Search runs..."
@@ -243,7 +257,7 @@ const RunsScreen: React.FC<RunsScreenProps> = ({ navigation, route }) => {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -277,9 +291,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  runNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   runName: {
     fontSize: 16,
-    flex: 1,
+    marginLeft: 8,
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -326,7 +345,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   header: {
-    padding: 16,
+    padding: 8,
   },
   statusFilter: {
     marginTop: 8,

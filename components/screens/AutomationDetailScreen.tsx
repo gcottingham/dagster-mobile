@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Card, Title, Paragraph, ActivityIndicator, Text, Chip, SegmentedButtons } from 'react-native-paper';
-import { useQuery } from '@apollo/client';
-import { GET_TICK_HISTORY, GET_AUTOMATION_RUNS } from '../../lib/graphql/queries';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client';
+import { GET_TICK_HISTORY, GET_AUTOMATION_RUNS, START_SENSOR, STOP_SENSOR, START_SCHEDULE, STOP_SCHEDULE } from '../../lib/graphql/queries';
 import { InstigationSelector, InstigationTick, AutomationRun } from '../../lib/types/dagster';
 import { formatDagsterDate, formatDagsterTime } from '../../lib/utils/dateUtils';
 import { useTheme } from '../ThemeProvider';
@@ -18,6 +19,82 @@ const AutomationDetailScreen: React.FC<AutomationDetailScreenProps> = ({ navigat
   const [refreshing, setRefreshing] = React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'success' | 'failure' | 'skipped'>('all');
   const [activeTab, setActiveTab] = React.useState<'history' | 'runs'>('history');
+  const client = useApolloClient();
+
+  // Mutations for enabling/disabling automations
+  const [startSensor] = useMutation(START_SENSOR, {
+    errorPolicy: 'all',
+  });
+  
+  const [stopSensor] = useMutation(STOP_SENSOR, {
+    errorPolicy: 'all',
+  });
+  
+  const [startSchedule] = useMutation(START_SCHEDULE, {
+    errorPolicy: 'all',
+  });
+  
+  const [stopSchedule] = useMutation(STOP_SCHEDULE, {
+    errorPolicy: 'all',
+  });
+
+  const handleToggleAutomation = async (newValue: boolean) => {
+    try {
+      const repositorySelector = {
+        repositoryLocationName: automation.repositoryLocationName,
+        repositoryName: automation.repositoryName,
+      };
+
+      if (automation.type === 'sensor') {
+        const sensorSelector = {
+          ...repositorySelector,
+          sensorName: automation.name,
+        };
+
+        if (newValue) {
+          await startSensor({
+            variables: { sensorSelector },
+          });
+        } else {
+          await stopSensor({
+            variables: { sensorSelector },
+          });
+        }
+      } else if (automation.type === 'schedule') {
+        const scheduleSelector = {
+          ...repositorySelector,
+          scheduleName: automation.name,
+        };
+
+        if (newValue) {
+          await startSchedule({
+            variables: { scheduleSelector },
+          });
+        } else {
+          await stopSchedule({
+            variables: { scheduleSelector },
+          });
+        }
+      }
+
+      // Update the local automation status
+      automation.status = newValue ? 'RUNNING' : 'STOPPED';
+      
+      // Show success message
+      Alert.alert(
+        'Success',
+        `Automation ${newValue ? 'enabled' : 'disabled'} successfully`,
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Error toggling automation:', error);
+      Alert.alert(
+        'Error',
+        `Failed to ${newValue ? 'enable' : 'disable'} automation: ${error.message}`,
+        [{ text: 'OK' }]
+      );
+    }
+  };
 
   const instigationSelector: InstigationSelector = {
     repositoryName: automation.repositoryName,
@@ -120,19 +197,23 @@ const AutomationDetailScreen: React.FC<AutomationDetailScreenProps> = ({ navigat
     const timestamp = new Date(item.timestamp * 1000);
     const endTimestamp = item.endTimestamp ? new Date(item.endTimestamp * 1000) : null;
     
+    const handleRunPress = (run: any) => {
+      console.log('Automation Detail - Navigating to RunDetail with runId:', run.id);
+      navigation.navigate('RunDetail', { runId: run.id });
+    };
+    
     return (
       <Card style={styles.card}>
         <Card.Content>
-          <View style={styles.tickHeader}>
-            <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-              <Text style={styles.statusText}>{item.status}</Text>
-            </View>
-          </View>
-          
           <View style={styles.tickDetails}>
-            <Text style={[styles.timestamp, { color: theme.colors.onSurfaceVariant }]}>
-              Started: {timestamp.toLocaleDateString()} {timestamp.toLocaleTimeString()}
-            </Text>
+            <View style={styles.timestampRow}>
+              <Text style={[styles.timestamp, { color: theme.colors.onSurfaceVariant }]}>
+                Started: {timestamp.toLocaleDateString()} {timestamp.toLocaleTimeString()}
+              </Text>
+              <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+                <Text style={styles.statusText}>{item.status}</Text>
+              </View>
+            </View>
             {endTimestamp && (
               <Text style={[styles.timestamp, { color: theme.colors.onSurfaceVariant }]}>
                 Ended: {endTimestamp.toLocaleDateString()} {endTimestamp.toLocaleTimeString()}
@@ -143,9 +224,11 @@ const AutomationDetailScreen: React.FC<AutomationDetailScreenProps> = ({ navigat
               <View style={styles.runsSection}>
                 <Text style={[styles.runsTitle, { color: theme.colors.onSurface }]}>Runs ({item.runIds.length}):</Text>
                 {item.runs.map((run, index) => (
-                  <Chip key={run.id} style={styles.runChip}>
-                    {run.id} - {run.status}
-                  </Chip>
+                  <TouchableOpacity key={run.id} onPress={() => handleRunPress(run)}>
+                    <Chip style={styles.runChip}>
+                      {run.id} - {run.status}
+                    </Chip>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}
@@ -189,8 +272,13 @@ const AutomationDetailScreen: React.FC<AutomationDetailScreenProps> = ({ navigat
     // Get target (job name) from the run data
     const target = runData.jobName || 'Unknown Job';
     
+    const handleRunPress = () => {
+      console.log('Automation Detail - Navigating to RunDetail with runId:', runData.id);
+      navigation.navigate('RunDetail', { runId: runData.id });
+    };
+    
     return (
-      <Card style={styles.card}>
+      <Card style={styles.card} onPress={handleRunPress}>
         <Card.Content>
           <View style={styles.runHeader}>
             <View style={styles.runIdContainer}>
@@ -219,10 +307,10 @@ const AutomationDetailScreen: React.FC<AutomationDetailScreenProps> = ({ navigat
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
         <Text style={{ color: theme.colors.onSurfaceVariant }}>Loading automation details...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -257,11 +345,23 @@ const AutomationDetailScreen: React.FC<AutomationDetailScreenProps> = ({ navigat
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
-        <Title style={[styles.automationName, { color: theme.colors.onSurface }]}>{automation.name}</Title>
-        <Text style={[styles.automationType, { color: theme.colors.onSurfaceVariant }]}>{automation.type}</Text>
-        <Text style={[styles.automationDescription, { color: theme.colors.onSurfaceVariant }]}>{automation.description}</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerInfo}>
+            <Title style={[styles.automationName, { color: theme.colors.onSurface }]}>{automation.name}</Title>
+            <Text style={[styles.automationType, { color: theme.colors.onSurfaceVariant }]}>{automation.type}</Text>
+          </View>
+          <Switch
+            value={automation.status === 'RUNNING'}
+            onValueChange={handleToggleAutomation}
+            trackColor={{ false: '#767577', true: '#4F43DD' }}
+            thumbColor={automation.status === 'RUNNING' ? '#ffffff' : '#f4f3f4'}
+          />
+        </View>
+        {automation.description && (
+          <Text style={[styles.automationDescription, { color: theme.colors.onSurfaceVariant }]}>{automation.description}</Text>
+        )}
       </View>
 
       <View style={[styles.tabContainer, { backgroundColor: theme.colors.surface }]}>
@@ -339,7 +439,7 @@ const AutomationDetailScreen: React.FC<AutomationDetailScreenProps> = ({ navigat
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -349,12 +449,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    padding: 16,
+    padding: 12,
     elevation: 2,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  headerInfo: {
+    flex: 1,
   },
   automationName: {
     fontSize: 24,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   automationType: {
     fontSize: 16,
@@ -409,6 +518,11 @@ const styles = StyleSheet.create({
   },
   tickDetails: {
     gap: 8,
+  },
+  timestampRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   timestamp: {
     fontSize: 14,

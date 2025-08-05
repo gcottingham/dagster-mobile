@@ -215,6 +215,14 @@ const AutomationStack = () => {
         headerTitleAlign: 'left'
       }}
     />
+          <Stack.Screen 
+      name="RunDetail" 
+      component={RunDetailScreen} 
+      options={{ 
+        headerTitle: () => <HeaderWithLogo title="Run Details" />,
+        headerTitleAlign: 'left'
+      }}
+    />
     </Stack.Navigator>
   );
 };
