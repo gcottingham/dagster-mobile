@@ -2,6 +2,7 @@
   "expo": {
     "name": "Dagster+ Mobile",
     "slug": "dagster-mobile",
+    "owner": "gcottingham",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/dagster-icon.png",
@@ -16,7 +17,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dagster.mobile"
+      "bundleIdentifier": "com.dagster.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -34,7 +38,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "3d630964-b73b-445f-af52-58a8e2a65b3b"
+        "projectId": "8a2fc566-0730-4a9c-9372-7664aec322f5"
       }
     },
     "plugins": [
