@@ -51,7 +51,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
 // Create Apollo Client with default URL (will be updated when settings are loaded)
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, createDynamicHttpLink(ENV_CONFIG.DEFAULT_DAGSTER_URL)]),
+  link: from([errorLink, authLink, createDynamicHttpLink(ENV_CONFIG.DAGSTER_API_URL)]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {
